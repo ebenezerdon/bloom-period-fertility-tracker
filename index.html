@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bloom — Period & Fertility Tracker</title>
+  <meta name="description" content="A beautiful period tracker that predicts period days, fertile window, and ovulation. Persistent local storage and accessible UI.">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jQuery must appear before local scripts per contract -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link rel="stylesheet" href="styles/main.css">
+
+  <!-- Tailwind component utilities defined here using a single inline block -->
+  <style type="text/tailwindcss" data-teda="tailwind-apply">
+    @layer components {
+      .btn-primary { @apply bg-indigo-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300; }
+      .btn-secondary { @apply bg-white border border-gray-200 px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100; }
+      .card { @apply bg-white rounded-2xl shadow-md p-4; }
+      .day-cell { @apply w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium select-none; }
+    }
+  </style>
+
+</head>
+<body class="bg-gradient-to-b from-gray-50 to-white min-h-screen text-gray-800 antialiased">
+  <header class="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <!-- Decorative illustration (SVG) -->
+      <div aria-hidden="true" class="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center">
+        <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bloom logo">
+          <circle cx="32" cy="32" r="30" fill="#FDF7FB" stroke="#F9E6EE" stroke-width="2" />
+          <path d="M32 18c4 0 7 3 7 7s-3 7-7 11c-4-4-7-7-7-11s3-7 7-7z" fill="#FF7AA2" />
+          <path d="M20 40c0-6 5-11 12-11s12 5 12 11v1H20v-1z" fill="#FFD7E7" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold">Bloom</h1>
+        <p class="text-sm text-gray-500">Track cycles, fertile window, and ovulation — beautifully.</p>
+      </div>
+    </div>
+    <nav class="flex items-center gap-3">
+      <button id="helpBtn" class="btn-secondary" aria-label="Open help">Help</button>
+      <button id="resetBtn" class="btn-secondary" aria-label="Reset data">Reset</button>
+      <a href="settings.html" class="btn-secondary" aria-label="Open settings">Settings</a>
+    </nav>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 pb-12">
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Controls Panel -->
+      <aside class="card card-accent lg:sticky lg:top-6">
+        <h2 class="text-lg font-medium mb-2">Cycle settings</h2>
+        <p class="text-sm text-gray-500 mb-4">Enter your last period start and typical cycle details. The app predicts your next cycles, fertile window, and ovulation day.</p>
+
+        <form id="settingsForm" class="space-y-4" aria-labelledby="settingsHeading">
+          <div>
+            <label for="lastPeriod" class="block text-sm font-medium text-gray-700">Last period start</label>
+            <input id="lastPeriod" name="lastPeriod" type="date" required class="mt-1 block w-full rounded-md border-gray-200 shadow-sm focus:ring-indigo-300 focus:border-indigo-300" />
+          </div>
+
+          <div>
+            <label for="cycleLength" class="block text-sm font-medium text-gray-700">Cycle length (days)</label>
+            <input id="cycleLength" name="cycleLength" type="number" min="20" max="45" value="28" required class="mt-1 block w-full rounded-md border-gray-200 p-2 focus:ring-indigo-300 focus:border-indigo-300" />
+            <p class="text-xs text-gray-400 mt-1">Typical cycle length ranges from 20 to 45 days.</p>
+          </div>
+
+          <div>
+            <label for="periodLength" class="block text-sm font-medium text-gray-700">Period length (days)</label>
+            <input id="periodLength" name="periodLength" type="number" min="1" max="14" value="5" required class="mt-1 block w-full rounded-md border-gray-200 p-2 focus:ring-indigo-300 focus:border-indigo-300" />
+          </div>
+
+          <div class="flex gap-2 mt-3">
+            <button type="submit" class="btn-primary">Save</button>
+            <button type="button" id="predictBtn" class="btn-secondary">Predict</button>
+          </div>
+        </form>
+
+        <hr class="my-4" />
+        <div id="summaryCard" class="bg-gradient-to-r from-white to-gray-50 rounded-lg p-3">
+          <h3 class="text-sm font-medium text-gray-700">Next predicted ovulation</h3>
+          <p id="nextOvulation" class="mt-2 text-lg font-semibold text-indigo-600">—</p>
+          <p id="nextFertile" class="text-sm text-gray-500 mt-1">—</p>
+        </div>
+
+        <div class="mt-4 text-xs text-gray-500">
+          <strong>Helpful tips:</strong>
+          <ul class="list-disc ml-4 mt-1">
+            <li>Predictions are estimates and not medical advice.</li>
+            <li>Update settings if your cycle changes often.</li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Calendar / Visualization -->
+      <section class="lg:col-span-2">
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-medium">Cycle forecast</h2>
+            <div class="text-sm text-gray-500">Viewing next 6 cycles</div>
+          </div>
+
+          <div id="calendarContainer" class="space-y-6">
+            <!-- Calendar months will be injected here by JS -->
+          </div>
+
+          <div class="mt-6 flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-sm" style="background:#FFD7E7; display:inline-block;"></span>
+              <span class="text-sm text-gray-600">Period days</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-sm" style="background:#7AD7C7; display:inline-block;"></span>
+              <span class="text-sm text-gray-600">Fertile window</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-sm" style="background:#7C6CFF; display:inline-block;"></span>
+              <span class="text-sm text-gray-600">Ovulation</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <div class="card">
+            <h3 class="text-md font-medium">Illustrations</h3>
+            <p class="text-sm text-gray-500 mt-2">Gentle visual guides show fertile and ovulation windows to help you plan.</p>
+
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <figure class="flex gap-4 items-center">
+                <svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fertile window illustration">
+                  <rect width="120" height="80" rx="12" fill="#F8FEFC" stroke="#E6FBF7" />
+                  <g transform="translate(10,12)">
+                    <g>
+                      <circle cx="12" cy="20" r="8" fill="#FFD7E7" />
+                      <text x="12" y="46" font-size="9" fill="#6B7280" text-anchor="middle">Period</text>
+                      <rect x="28" y="12" width="12" height="16" rx="3" fill="#FFD7E7" />
+                      <rect x="44" y="4" width="28" height="28" rx="8" fill="#7AD7C7" />
+                      <circle cx="88" cy="20" r="8" fill="#7C6CFF" />
+                      <text x="88" y="46" font-size="9" fill="#6B7280" text-anchor="middle">Ovulate</text>
+                    </g>
+                  </g>
+                </svg>
+                <figcaption class="text-sm text-gray-600">Color-coded days with gentle shapes for quick scanning.</figcaption>
+              </figure>
+
+              <figure class="flex gap-4 items-center">
+                <svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cycle illustration">
+                  <rect width="120" height="80" rx="12" fill="#FFF8FB" stroke="#F9EEF5" />
+                  <g transform="translate(8,8)" fill="#FF7AA2">
+                    <ellipse cx="22" cy="30" rx="18" ry="12" opacity="0.12" />
+                    <ellipse cx="62" cy="30" rx="18" ry="12" opacity="0.12" fill="#7AD7C7" />
+                    <ellipse cx="100" cy="30" rx="18" ry="12" opacity="0.12" fill="#7C6CFF" />
+                  </g>
+                </svg>
+                <figcaption class="text-sm text-gray-600">Soft layers show overlapping windows visually.</figcaption>
+              </figure>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+    </section>
+  </main>
+
+  <!-- Help modal template (hidden) -->
+  <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-30 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
+      <h3 class="text-lg font-medium">How predictions work</h3>
+      <p class="mt-2 text-sm text-gray-600">The app estimates ovulation as the day 14 days before the next expected period. The fertile window includes the five days before ovulation and the day of ovulation. These are estimations and not medical advice.</p>
+      <div class="mt-4 text-right">
+        <button id="closeHelp" class="btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="max-w-5xl mx-auto px-6 py-6 text-xs text-gray-500">
+    <p>Bloom is a lightweight, private tracker for personal planning. Data stays in your browser.</p>
+  </footer>
+
+  <!-- Local scripts must be loaded in this specific order per contract -->
+  <script src="scripts/helpers.js"></script>
+  <script src="scripts/ui.js"></script>
+  <script src="scripts/main.js"></script>
+</body>
+</html>

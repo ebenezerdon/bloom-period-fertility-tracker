@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bloom — Settings</title>
+  <meta name="description" content="Settings for Bloom — update your last period and typical cycle details.">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jQuery must appear before local scripts per contract -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link rel="stylesheet" href="styles/main.css">
+  <style type="text/tailwindcss" data-teda="tailwind-apply">
+    @layer components {
+      .btn-primary { @apply bg-indigo-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300; }
+      .btn-secondary { @apply bg-white border border-gray-200 px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100; }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-gray-50 to-white min-h-screen text-gray-800 antialiased">
+  <header class="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div aria-hidden="true" class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center">
+        <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bloom logo">
+          <circle cx="32" cy="32" r="30" fill="#FDF7FB" stroke="#F9E6EE" stroke-width="2" />
+          <path d="M32 18c4 0 7 3 7 7s-3 7-7 11c-4-4-7-7-7-11s3-7 7-7z" fill="#FF7AA2" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-semibold">Settings</h1>
+        <p class="text-sm text-gray-500">Update your cycle preferences and save them locally.</p>
+      </div>
+    </div>
+    <nav class="flex items-center gap-3">
+      <a href="index.html" class="btn-secondary" aria-label="Back to app">Back</a>
+    </nav>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 pb-12">
+    <section class="card">
+      <h2 class="text-lg font-medium mb-2">Cycle settings</h2>
+      <p class="text-sm text-gray-500 mb-4">Enter the start date of your last period and your typical cycle details. Save to persist to your browser.</p>
+
+      <form id="settingsForm" class="space-y-4" aria-labelledby="settingsHeading">
+        <div>
+          <label for="lastPeriod" class="block text-sm font-medium text-gray-700">Last period start</label>
+          <input id="lastPeriod" name="lastPeriod" type="date" required class="mt-1 block w-full rounded-md border-gray-200 shadow-sm focus:ring-indigo-300 focus:border-indigo-300" />
+        </div>
+
+        <div>
+          <label for="cycleLength" class="block text-sm font-medium text-gray-700">Cycle length (days)</label>
+          <input id="cycleLength" name="cycleLength" type="number" min="20" max="45" value="28" required class="mt-1 block w-full rounded-md border-gray-200 p-2 focus:ring-indigo-300 focus:border-indigo-300" />
+          <p class="text-xs text-gray-400 mt-1">Typical cycle length ranges from 20 to 45 days.</p>
+        </div>
+
+        <div>
+          <label for="periodLength" class="block text-sm font-medium text-gray-700">Period length (days)</label>
+          <input id="periodLength" name="periodLength" type="number" min="1" max="14" value="5" required class="mt-1 block w-full rounded-md border-gray-200 p-2 focus:ring-indigo-300 focus:border-indigo-300" />
+        </div>
+
+        <div class="flex gap-2 mt-3">
+          <button type="submit" class="btn-primary">Save</button>
+          <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+
+      <hr class="my-4" />
+      <p class="text-xs text-gray-500">Saved settings are stored only in your browser localStorage. Use the main app to preview predictions.</p>
+    </section>
+  </main>
+
+  <footer class="max-w-4xl mx-auto px-6 py-6 text-xs text-gray-500">
+    <p>Bloom settings — local only.</p>
+  </footer>
+
+  <!-- Local scripts: helpers first per contract -->
+  <script src="scripts/helpers.js"></script>
+  <script src="scripts/settings.js"></script>
+</body>
+</html>
